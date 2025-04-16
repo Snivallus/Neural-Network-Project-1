@@ -37,9 +37,12 @@ class Linear(Layer):
     def forward(self, X):
         """
         input: [batch_size, in_dim]
-        out: [batch_size, out_dim]
+        Weight: [in_dim, out_dim]
+        Bias: [1, out_dim]
+        output: [batch_size, out_dim]
         """
-        pass
+        self.input = X
+        return np.dot(X, self.W) + self.b
 
     def backward(self, grad : np.ndarray):
         """
@@ -47,8 +50,27 @@ class Linear(Layer):
         output: [batch_size, in_dim] the grad to be passed to the previous layer.
         This function also calculates the grads for W and b.
         """
-        pass
-    
+        X = self.input
+        # Compute gradient for W: X^T @ grad, with possible weight decay
+        # Gradiant ∂L/∂W = ∂Z/∂W · ∂L/∂Z = Xᵀ · grad
+        dW = np.dot(X.T, grad)
+        if self.weight_decay: # L2 regularization
+            dW += self.weight_decay_lambda * self.W
+        
+        # Compute gradient for b: sum over the batch dimension
+        # Gradiant ∂L/∂b = ∂Z/∂b · ∂L/∂Z = 1ᵀ · grad
+        db = np.sum(grad, axis=0, keepdims=True)
+
+        # Compute gradient for the previous layer: grad @ W^T
+        # Jacobian ∂L/∂X = ∂L/∂Z · ∂Z/∂X = grad · Wᵀ
+        grad_prev = np.dot(grad, self.W.T)
+
+        # Save gradients
+        self.grads['W'] = dW
+        self.grads['b'] = db
+        
+        return grad_prev
+
     def clear_grad(self):
         self.grads = {'W' : None, 'b' : None}
 
@@ -102,12 +124,34 @@ class ReLU(Layer):
         output = np.where(self.input < 0, 0, grads)
         return output
 
+def softmax(X):
+    """
+    Numerically stable softmax function.
+    
+    Parameters:
+        X: np.ndarray of shape (batch_size, num_classes)
+    
+    Returns:
+        probs: np.ndarray of shape (batch_size, num_classes), where each row sums to 1
+    """
+    # Subtract max for numerical stability
+    x_max = np.max(X, axis=1, keepdims=True)
+    x_exp = np.exp(X - x_max)
+    partition = np.sum(x_exp, axis=1, keepdims=True)
+    return x_exp / partition
+
 class MultiCrossEntropyLoss(Layer):
     """
     A multi-cross-entropy loss layer, with Softmax layer in it, which could be cancelled by method cancel_softmax
     """
-    def __init__(self, model = None, max_classes = 10) -> None:
-        pass
+    def __init__(self, model=None, max_classes=10) -> None:
+        super().__init__()
+        self.model = model
+        self.max_classes = max_classes
+        self.has_softmax = True # 默认使用 Softmax 激活函数
+        self.grads = None
+        self.probs = None
+        self.labels = None
 
     def __call__(self, predicts, labels):
         return self.forward(predicts, labels)
@@ -119,15 +163,36 @@ class MultiCrossEntropyLoss(Layer):
         This function generates the loss.
         """
         # / ---- your codes here ----/
-        pass
-    
+        self.labels = labels
+        batch_size = predicts.shape[0]
+        
+        if self.has_softmax:
+            self.probs = softmax(predicts)
+        else:
+            self.probs = predicts
+        
+        # Compute cross-entropy loss with numerical stability
+        correct_log_probs = np.log(self.probs[np.arange(batch_size), labels] + 1e-8)
+        loss = -np.mean(correct_log_probs)
+        
+        return loss
+
     def backward(self):
+        """
+        Backward pass to compute gradient of the loss w.r.t. inputs to softmax (logits).
+        """
         # first compute the grads from the loss to the input
-        # / ---- your codes here ----/
+        y_true = np.zeros_like(self.probs)  # Initialize one-hot label matrix
+        y_true[np.arange(self.batch_size), self.labels] = 1
+        self.grads = (self.probs - y_true) / self.batch_size # Gradient of loss w.r.t. input logits
+
         # Then send the grads to model for back propagation
         self.model.backward(self.grads)
 
     def cancel_soft_max(self):
+        """
+        Cancel internal softmax computation.
+        """
         self.has_softmax = False
         return self
     
@@ -136,9 +201,3 @@ class L2Regularization(Layer):
     L2 Reg can act as weight decay that can be implemented in class Linear.
     """
     pass
-       
-def softmax(X):
-    x_max = np.max(X, axis=1, keepdims=True)
-    x_exp = np.exp(X - x_max)
-    partition = np.sum(x_exp, axis=1, keepdims=True)
-    return x_exp / partition
