@@ -1,7 +1,7 @@
 from abc import abstractmethod
 import numpy as np
 
-class scheduler():
+class Scheduler():
     def __init__(self, optimizer) -> None:
         self.optimizer = optimizer
         self.step_count = 0
@@ -11,7 +11,7 @@ class scheduler():
         pass
 
 
-class StepLR(scheduler):
+class StepLR(Scheduler):
     def __init__(self, optimizer, step_size=30, gamma=0.1) -> None:
         super().__init__(optimizer)
         self.step_size = step_size
@@ -23,8 +23,8 @@ class StepLR(scheduler):
             self.optimizer.init_lr *= self.gamma
             self.step_count = 0
 
-class MultiStepLR(scheduler):
+class MultiStepLR(Scheduler):
     pass
 
-class ExponentialLR(scheduler):
+class ExponentialLR(Scheduler):
     pass

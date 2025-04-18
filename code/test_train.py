@@ -42,7 +42,7 @@ valid_imgs = valid_imgs / valid_imgs.max()
 linear_model = nn.models.Model_MLP([train_imgs.shape[-1], 600, 10], 'ReLU', [1e-4, 1e-4])
 optimizer = nn.optimizer.SGD(init_lr=0.06, model=linear_model)
 scheduler = nn.lr_scheduler.MultiStepLR(optimizer=optimizer, milestones=[800, 2400, 4000], gamma=0.5)
-loss_fn = nn.op.MultiCrossEntropyLoss(model=linear_model, max_classes=train_labs.max()+1)
+loss_fn = nn.op.CrossEntropyLoss(model=linear_model, max_classes=train_labs.max()+1)
 
 runner = nn.runner.RunnerM(linear_model, optimizer, nn.metric.accuracy, loss_fn, scheduler=scheduler)
 

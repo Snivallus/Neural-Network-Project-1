@@ -1,7 +1,6 @@
 from abc import abstractmethod
 import numpy as np
 
-
 class Optimizer:
     def __init__(self, init_lr, model) -> None:
         self.init_lr = init_lr

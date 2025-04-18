@@ -6,7 +6,7 @@ First look into the `dataset_explore.ipynb` and get familiar with the data.
 
 1. `op.py` 
    Implement the forward and backward function of `class Linear`
-   Implement the `MultiCrossEntropyLoss`. Note that the `Softmax` layer could be included in the `MultiCrossEntropyLoss`.
+   Implement the `CrossEntropyLoss`. Note that the `Softmax` layer could be included in the `CrossEntropyLoss`.
    Try to implement `conv2D`, do not worry about the efficiency.
    You're welcome to implement other complicated layer (e.g.  ResNet Block or Bottleneck)
 2. `models.py` You may freely edit or write your own model structure.
