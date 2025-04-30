@@ -13,7 +13,7 @@ elif choice == 'CNN':
 else:
 	raise(f"Invalid choice: {choice}, should be \'MLP\' or \'CNN\'")
 
-model.load_model(r'./saved_models/best_model_8.pickle')
+model.load_model(r'./saved_models/best_model_9.pickle')
 
 test_images_path = r'./dataset/MNIST/t10k-images-idx3-ubyte.gz'
 test_labels_path = r'./dataset/MNIST/t10k-labels-idx1-ubyte.gz'
