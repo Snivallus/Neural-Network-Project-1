@@ -4,7 +4,8 @@ from tqdm import tqdm
 
 class RunnerM():
     """
-    This is an exmaple to train, evaluate, save, load the model. However, some of the function calling may not be correct 
+    This is an exmaple to train, evaluate, save, load the model. 
+    However, some of the function calling may not be correct 
     due to the different implementation of those models.
     """
     def __init__(self, model, optimizer, metric, loss_fn, batch_size=32, scheduler=None):
@@ -24,7 +25,7 @@ class RunnerM():
 
         num_epochs = kwargs.get("num_epochs", 0)
         log_iters = kwargs.get("log_iters", 100)
-        save_dir = kwargs.get("save_dir", "best_model")
+        save_dir = kwargs.get("save_dir", "./saved_model")
 
         if not os.path.exists(save_dir):
             os.mkdir(save_dir)
@@ -41,7 +42,9 @@ class RunnerM():
             X = X[idx]
             y = y[idx]
 
-            for iteration in range(int(X.shape[0] / self.batch_size) + 1):
+            num_batches = int(X.shape[0] / self.batch_size) + 1
+
+            for iteration in tqdm(range(num_batches), desc=f"Epoch {epoch+1}/{num_epochs}"):
                 train_X = X[iteration * self.batch_size : (iteration+1) * self.batch_size]
                 train_y = y[iteration * self.batch_size : (iteration+1) * self.batch_size]
 
@@ -64,9 +67,11 @@ class RunnerM():
                 self.dev_loss.append(dev_loss)
 
                 if (iteration) % log_iters == 0:
-                    print(f"epoch: {epoch}, iteration: {iteration}")
+                    print(f"\nepoch: {epoch}, iteration: {iteration}")
                     print(f"[Train] loss: {trn_loss}, score: {trn_score}")
-                    print(f"[Dev] loss: {dev_loss}, score: {dev_score}")
+                    print(f"[Valid] loss: {dev_loss}, score: {dev_score}")
+                    if self.optimizer.type not in ['adam', 'nadam']:
+                        print(f"Learning rate: {self.optimizer.current_lr}")
 
             if dev_score > best_score:
                 save_path = os.path.join(save_dir, 'best_model.pickle')
